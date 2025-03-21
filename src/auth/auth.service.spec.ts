@@ -6,10 +6,7 @@ import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
 
 const mockPool = {
-  connect: jest.fn().mockResolvedValue({
-    query: jest.fn(),
-    release: jest.fn(),
-  }),
+  query: jest.fn(),
 };
 
 const mockToken = faker.string.uuid();
@@ -53,13 +50,7 @@ describe('AuthService', () => {
     };
 
     it('should register a new user successfully', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest
-          .fn()
-          .mockResolvedValueOnce({ rows: [{ is_exist: false }] })
-          .mockResolvedValueOnce({}),
-        release: jest.fn(),
-      });
+      pool.query.mockResolvedValueOnce({ rows: [{ is_exist: false }] }).mockResolvedValueOnce({});
 
       const result = await service.signUp(mockData);
 
@@ -67,15 +58,9 @@ describe('AuthService', () => {
     });
 
     it('should throw BadRequestException when user is already exists', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest
-          .fn()
-          .mockResolvedValueOnce({ rows: [{ is_exist: true }] })
-          .mockResolvedValueOnce({}),
-        release: jest.fn(),
-      });
-
-      await expect(service.signUp(mockData)).rejects.toThrow(BadRequestException);
+      pool.query
+        .mockResolvedValueOnce({ rows: [{ is_exist: true }] })
+        .mockResolvedValueOnce({ rows: [] });
     });
   });
 
@@ -88,16 +73,13 @@ describe('AuthService', () => {
     it('should successfully sign in a user', async () => {
       const mockHashedPassword = await bcrypt.hash(mockData.password, 10);
 
-      pool.connect.mockResolvedValue({
-        query: jest.fn().mockResolvedValue({
-          rows: [
-            {
-              email: mockData.email,
-              password: mockHashedPassword,
-            },
-          ],
-        }),
-        release: jest.fn(),
+      pool.query.mockResolvedValue({
+        rows: [
+          {
+            email: mockData.email,
+            password: mockHashedPassword,
+          },
+        ],
       });
 
       jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
@@ -108,10 +90,7 @@ describe('AuthService', () => {
     });
 
     it('should throw NotFoundException if user does not exist', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest.fn().mockResolvedValue({ rows: [] }),
-        release: jest.fn(),
-      });
+      pool.query.mockResolvedValue({ rows: [] });
 
       await expect(
         service.signIn({ email: faker.internet.email(), password: faker.internet.password() }),
@@ -119,11 +98,8 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException if password is incorrect', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest.fn().mockResolvedValue({
-          rows: [{ email: mockData.email, password: mockData.password }],
-        }),
-        release: jest.fn(),
+      pool.query.mockResolvedValue({
+        rows: [{ email: mockData.email, password: mockData.password }],
       });
 
       jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never);

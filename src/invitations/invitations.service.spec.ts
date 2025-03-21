@@ -6,10 +6,7 @@ import { BadRequestException, ForbiddenException, NotFoundException } from '@nes
 import { faker } from '@faker-js/faker';
 
 const mockPool = {
-  connect: jest.fn().mockResolvedValue({
-    query: jest.fn(),
-    release: jest.fn(),
-  }),
+  query: jest.fn(),
 };
 
 describe('InvitationsService', () => {
@@ -42,16 +39,12 @@ describe('InvitationsService', () => {
     };
 
     it('should create a new invitation successfully', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest
-          .fn()
-          .mockResolvedValueOnce({ rows: [{ is_exist: true }] })
-          .mockResolvedValueOnce({ rows: [{ is_exist: false }] })
-          .mockResolvedValueOnce({
-            rows: [mockData],
-          }),
-        release: jest.fn(),
-      });
+      pool.query
+        .mockResolvedValueOnce({ rows: [{ is_exist: true }] })
+        .mockResolvedValueOnce({ rows: [{ is_exist: false }] })
+        .mockResolvedValueOnce({
+          rows: [mockData],
+        });
 
       const result = await service.create(
         {
@@ -62,15 +55,10 @@ describe('InvitationsService', () => {
       );
 
       expect(result).toEqual(mockData);
-
-      expect(pool.connect).toHaveBeenCalledTimes(1);
     });
 
     it("should throw NotFoundException if receiver doesn't not exist", async () => {
-      pool.connect.mockResolvedValue({
-        query: jest.fn().mockResolvedValueOnce({ rows: [{ is_exist: false }] }),
-        release: jest.fn(),
-      });
+      pool.query.mockResolvedValueOnce({ rows: [{ is_exist: false }] });
 
       await expect(
         service.create(
@@ -81,13 +69,9 @@ describe('InvitationsService', () => {
     });
 
     it('should throw BadRequestException if invitation already exists', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest
-          .fn()
-          .mockResolvedValueOnce({ rows: [{ is_exist: true }] })
-          .mockResolvedValueOnce({ rows: [{ is_exist: true }] }),
-        release: jest.fn(),
-      });
+      pool.query
+        .mockResolvedValueOnce({ rows: [{ is_exist: true }] })
+        .mockResolvedValueOnce({ rows: [{ is_exist: true }] });
 
       await expect(
         service.create(
@@ -105,17 +89,13 @@ describe('InvitationsService', () => {
       status: InvitationStatus.ACCEPTED,
     };
     it('should update the invitation status successfully', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest
-          .fn()
-          .mockResolvedValueOnce({
-            rows: [{ id: mockData.invitation_id, receiver_id: mockData.receiver_id }],
-          })
-          .mockResolvedValueOnce({
-            rows: [{ id: mockData.invitation_id, status: mockData.status }],
-          }),
-        release: jest.fn(),
-      });
+      pool.query
+        .mockResolvedValueOnce({
+          rows: [{ id: mockData.invitation_id, receiver_id: mockData.receiver_id }],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ id: mockData.invitation_id, status: mockData.status }],
+        });
 
       const result = await service.update(
         { status: mockData.status },
@@ -127,10 +107,7 @@ describe('InvitationsService', () => {
     });
 
     it('should throw NotFoundException if invitation does not exist', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest.fn().mockResolvedValue({ rows: [] }),
-        release: jest.fn(),
-      });
+      pool.query.mockResolvedValue({ rows: [] });
 
       await expect(
         service.update({ status: mockData.status }, mockData.invitation_id, mockData.receiver_id),
@@ -138,11 +115,8 @@ describe('InvitationsService', () => {
     });
 
     it('should throw ForbiddenException if receiver_id does not match', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest.fn().mockResolvedValue({
-          rows: [{ id: mockData.invitation_id, receiver_id: faker.number.int({ min: 100 }) }],
-        }),
-        release: jest.fn(),
+      pool.query.mockResolvedValue({
+        rows: [{ id: mockData.invitation_id, receiver_id: faker.number.int({ min: 100 }) }],
       });
 
       await expect(
@@ -153,10 +127,7 @@ describe('InvitationsService', () => {
 
   describe('getMyInvitations', () => {
     it('should return an empty array if the user has no invitations', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest.fn().mockResolvedValue({ rows: [] }),
-        release: jest.fn(),
-      });
+      pool.query.mockResolvedValue({ rows: [] });
 
       const result = await service.getMyInvitations(1);
 

@@ -4,10 +4,7 @@ import { GetUsersDto } from './dtos/get-users.dto';
 import { faker } from '@faker-js/faker';
 
 const mockPool = {
-  connect: jest.fn().mockResolvedValue({
-    query: jest.fn(),
-    release: jest.fn(),
-  }),
+  query: jest.fn(),
 };
 
 describe('UsersService', () => {
@@ -52,13 +49,9 @@ describe('UsersService', () => {
     ];
 
     it('should return a list of users with pagination', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest
-          .fn()
-          .mockResolvedValueOnce({ rows: mockUsers })
-          .mockResolvedValueOnce({ rows: [{ total: 2 }] }),
-        release: jest.fn(),
-      });
+      pool.query
+        .mockResolvedValueOnce({ rows: mockUsers })
+        .mockResolvedValueOnce({ rows: [{ total: 2 }] });
 
       const query: GetUsersDto = { search: '', page: 1, limit: 10 };
       const result = await service.index(query, 3);
@@ -69,18 +62,12 @@ describe('UsersService', () => {
         page: 1,
         limit: 10,
       });
-
-      expect(pool.connect).toHaveBeenCalledTimes(1);
     });
 
     it('should apply search filter correctly', async () => {
-      pool.connect.mockResolvedValue({
-        query: jest
-          .fn()
-          .mockResolvedValueOnce({ rows: [] })
-          .mockResolvedValueOnce({ rows: [{ total: 0 }] }),
-        release: jest.fn(),
-      });
+      pool.query
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ total: 0 }] });
 
       const query: GetUsersDto = { search: 'nonexistent', page: 1, limit: 10 };
       const result = await service.index(query, 3);
